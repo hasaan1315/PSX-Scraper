@@ -1,0 +1,3 @@
+psxdata
+beautifulsoup4
+pandas
