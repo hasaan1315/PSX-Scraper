@@ -1,11 +1,49 @@
-import requests, json
+name: daily-psx-scrape
 
-H = {"User-Agent": "Mozilla/5.0"}
+on:
+  # Mon-Fri 11:30 UTC = 4:30 PM Pakistan time (PSX closes ~3:30 PM)
+  schedule:
+    - cron: "30 11 * * 1-5"
+  # Manual run. Default limit 5 = quick cloud test. Clear it for a full run.
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Only first N tickers (empty = all)"
+        required: false
+        default: "5"
 
-r = requests.get("https://dps.psx.com.pk/timeseries/eod/HBL", headers=H, timeout=30)
-print("EOD status:", r.status_code)
-print(r.text[:500])
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
 
-r = requests.get("https://dps.psx.com.pk/symbols", headers=H, timeout=30)
-print("SYMBOLS status:", r.status_code)
-print(json.dumps(r.json()[:2], indent=2))
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install packages
+        run: pip install -r requirements.txt
+
+      - name: Run scraper
+        env:
+          LIMIT: ${{ github.event.inputs.limit }}
+        run: |
+          ARGS="--days 5"
+          if [ -n "$LIMIT" ]; then ARGS="$ARGS --limit $LIMIT"; fi
+          echo "Running: python scraper.py $ARGS"
+          python scraper.py $ARGS
+
+      - name: Upload Bronze files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bronze-${{ github.run_id }}
+          path: bronze/
+          if-no-files-found: warn
+          retention-days: 30
