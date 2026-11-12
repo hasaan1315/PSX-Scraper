@@ -1,0 +1,50 @@
+import yfinance as yf
+import pandas as pd
+from datetime import datetime
+import time
+
+# Use the .KA suffix for Karachi Stock Exchange
+portfolio_tickers = ["SYS.KA", "HUBC.KA", "ENGRO.KA"]
+
+def fetch_market_data(tickers):
+    all_data = []
+    
+    for ticker in tickers:
+        print(f"Fetching data for {ticker}...")
+        try:
+            stock = yf.Ticker(ticker)
+            # Fetch 1 month of data to ensure we capture recent dividends
+            df = stock.history(period="1mo")
+            
+            if not df.empty:
+                df.reset_index(inplace=True)
+                # Convert the datetime to a clean string format (YYYY-MM-DD)
+                df['Date'] = df['Date'].dt.strftime('%Y-%m-%d') 
+                df['Ticker'] = ticker
+                df['Ingestion_Date'] = datetime.now().strftime("%Y-%m-%d")
+                
+                # Select only the columns we need for the Bronze layer
+                clean_df = df[['Date', 'Ticker', 'Close', 'Dividends', 'Stock Splits', 'Ingestion_Date']]
+                all_data.append(clean_df)
+            else:
+                print(f"No data returned for {ticker}")
+                
+            # Pause for 1 second between requests to avoid getting blocked
+            time.sleep(1) 
+            
+        except Exception as e:
+            print(f"Error fetching {ticker}: {e}")
+            
+    if all_data:
+        # Combine all individual stock dataframes into one master table
+        final_df = pd.concat(all_data, ignore_index=True)
+        filename = f"bronze_psx_data_{datetime.now().strftime('%Y%m%d')}.csv"
+        
+        # Save to CSV
+        final_df.to_csv(filename, index=False)
+        print(f"\nSuccess! Saved {len(final_df)} rows to {filename}")
+    else:
+        print("\nPipeline failed: No data extracted.")
+
+if __name__ == "__main__":
+    fetch_market_data(portfolio_tickers)
