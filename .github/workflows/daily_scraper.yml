@@ -20,7 +20,7 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 150
 
     steps:
       - name: Checkout
@@ -37,6 +37,7 @@ jobs:
 
       - name: Run scraper
         env:
+          PYTHONUNBUFFERED: "1"
           LIMIT: ${{ github.event.inputs.limit }}
           TICKERS: ${{ github.event.inputs.tickers }}
         run: |

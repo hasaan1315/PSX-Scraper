@@ -1,7 +1,0 @@
-ticker,reason
-GHGL,"time data ""13/13/2025"" doesn't match format ""%d/%m/%Y"". You might want to try:
-    - passing `format` if your strings have a consistent format;
-    - passing `format='ISO8601'` if your strings are all"
-SEPL,"time data ""19/25/2026"" doesn't match format ""%d/%m/%Y"". You might want to try:
-    - passing `format` if your strings have a consistent format;
-    - passing `format='ISO8601'` if your strings are all"

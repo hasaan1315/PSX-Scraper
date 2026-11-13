@@ -238,10 +238,13 @@ def main():
     stamp = datetime.now().strftime("%Y%m%d")
     ingestion = datetime.now().strftime("%Y-%m-%d")
 
+    syms = psxdata.symbols()
+    save(syms, out / "reference", f"symbols_{stamp}.csv")
+
     if args.tickers:
         tickers = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
     else:
-        tickers = list(psxdata.tickers())
+        tickers = syms.loc[~syms["is_debt"].astype(bool), "symbol"].tolist()
         if args.limit:
             tickers = tickers[: args.limit]
     print(f"{len(tickers)} tickers\n")
