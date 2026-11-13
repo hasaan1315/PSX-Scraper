@@ -4,8 +4,7 @@ on:
   # Mon-Fri 11:30 UTC = 4:30 PM Pakistan time (PSX closes ~3:30 PM)
   schedule:
     - cron: "30 11 * * 1-5"
-  # Manual run. Default = 5 real stocks (quick cloud test).
-  # Clear both boxes for a full run of all tickers.
+  # Manual run. Leave both boxes empty for a full run.
   workflow_dispatch:
     inputs:
       tickers:
@@ -47,7 +46,13 @@ jobs:
           echo "Running: python scraper.py $ARGS"
           python scraper.py $ARGS
 
-      - name: Upload Bronze files
+      - name: Upload to Databricks Volume
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: python upload_to_databricks.py
+
+      - name: Upload Bronze files (backup artifact)
         if: always()
         uses: actions/upload-artifact@v4
         with:
