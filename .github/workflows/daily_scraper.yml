@@ -4,13 +4,18 @@ on:
   # Mon-Fri 11:30 UTC = 4:30 PM Pakistan time (PSX closes ~3:30 PM)
   schedule:
     - cron: "30 11 * * 1-5"
-  # Manual run. Default limit 5 = quick cloud test. Clear it for a full run.
+  # Manual run. Default = 5 real stocks (quick cloud test).
+  # Clear both boxes for a full run of all tickers.
   workflow_dispatch:
     inputs:
+      tickers:
+        description: "Comma list, e.g. HBL,OGDC,LUCK (empty = use limit/all)"
+        required: false
+        default: "HBL,OGDC,LUCK,MEBL,PSO"
       limit:
         description: "Only first N tickers (empty = all)"
         required: false
-        default: "5"
+        default: ""
 
 jobs:
   scrape:
@@ -33,8 +38,10 @@ jobs:
       - name: Run scraper
         env:
           LIMIT: ${{ github.event.inputs.limit }}
+          TICKERS: ${{ github.event.inputs.tickers }}
         run: |
           ARGS="--days 5"
+          if [ -n "$TICKERS" ]; then ARGS="$ARGS --tickers $TICKERS"; fi
           if [ -n "$LIMIT" ]; then ARGS="$ARGS --limit $LIMIT"; fi
           echo "Running: python scraper.py $ARGS"
           python scraper.py $ARGS

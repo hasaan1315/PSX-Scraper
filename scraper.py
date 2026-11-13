@@ -231,15 +231,19 @@ def main():
     ap.add_argument("--only", choices=["prices", "dividends"])
     ap.add_argument("--limit", type=int, help="only first N tickers (testing)")
     ap.add_argument("--out", default="bronze", help="output folder")
+    ap.add_argument("--tickers", help="comma list, e.g. HBL,OGDC,LUCK")
     args = ap.parse_args()
 
     out = Path(args.out)
     stamp = datetime.now().strftime("%Y%m%d")
     ingestion = datetime.now().strftime("%Y-%m-%d")
 
-    tickers = list(psxdata.tickers())
-    if args.limit:
-        tickers = tickers[: args.limit]
+    if args.tickers:
+        tickers = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
+    else:
+        tickers = list(psxdata.tickers())
+        if args.limit:
+            tickers = tickers[: args.limit]
     print(f"{len(tickers)} tickers\n")
 
     if args.only in (None, "prices"):
