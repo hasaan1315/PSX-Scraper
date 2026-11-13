@@ -1,9 +1,7 @@
 name: daily-psx-scrape
 
 on:
-  # Mon-Fri 11:30 UTC = 4:30 PM Pakistan time (PSX closes ~3:30 PM)
-  schedule:
-    - cron: "30 11 * * 1-5"
+  # Triggered by cron-job.org (Mon-Fri 4:30 PM Pakistan time) via API
   # Manual run. Leave both boxes empty for a full run.
   workflow_dispatch:
     inputs:
