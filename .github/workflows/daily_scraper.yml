@@ -7,7 +7,7 @@ on:
   # Manual run. Default = 5 real stocks (quick cloud test).
   # Clear both boxes for a full run of all tickers.
   workflow_dispatch:
-        inputs:
+    inputs:
       tickers:
         description: "Comma list, e.g. HBL,OGDC,LUCK. Empty = all tickers"
         required: false
