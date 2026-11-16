@@ -1,8 +1,8 @@
 name: daily-psx-scrape
 
 on:
-  # Triggered by cron-job.org (Mon-Fri 4:30 PM Pakistan time) via API
-  # Manual run. Leave both boxes empty for a full run.
+  # Started by cron-job.org (Mon-Fri 4:30 PM Pakistan time) through the GitHub API.
+  # Manual run: Actions tab, Run workflow. Leave all boxes empty for a normal full run.
   workflow_dispatch:
     inputs:
       tickers:
@@ -13,6 +13,18 @@ on:
         description: "First N tickers only. Empty = all"
         required: false
         default: ""
+      face_value:
+        description: "Also scrape face values now (true/false)"
+        required: false
+        default: "false"
+
+# A second run waits for the first instead of writing the same files at the same time
+concurrency:
+  group: psx-scrape
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   scrape:
@@ -43,6 +55,22 @@ jobs:
           if [ -n "$LIMIT" ]; then ARGS="$ARGS --limit $LIMIT"; fi
           echo "Running: python scraper.py $ARGS"
           python scraper.py $ARGS
+
+      # Face values change rarely. Scrape them on the first Monday of each month,
+      # or when the face_value box is set to true. Uses the dividend files written above.
+      - name: Scrape face values (first Monday of the month, or on request)
+        env:
+          PYTHONUNBUFFERED: "1"
+          FORCE: ${{ github.event.inputs.face_value }}
+          TICKERS: ${{ github.event.inputs.tickers }}
+        run: |
+          DAY=$(date -u +%d)
+          WEEKDAY=$(date -u +%u)
+          if [ "$FORCE" = "true" ] || { [ -z "$TICKERS" ] && [ "$DAY" -le 7 ] && [ "$WEEKDAY" = "1" ]; }; then
+            python scrape_face_value.py
+          else
+            echo "Skipping face values (runs on the first Monday of the month, or set face_value = true)"
+          fi
 
       - name: Upload to Databricks Volume
         env:

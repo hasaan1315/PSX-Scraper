@@ -3,16 +3,18 @@ PSX Bronze ingestion: daily prices + dividend announcements.
 
 Source : PSX (dps.psx.com.pk) via psxdata (handles X-Req-Id token).
 Output : append-only dated CSV files (Bronze layer).
+           bronze/reference/symbols_YYYYMMDD.csv
            bronze/prices/prices_YYYYMMDD.csv
            bronze/dividends/dividends_YYYYMMDD.csv
            bronze/failed/failed_prices_YYYYMMDD.csv
            bronze/failed/failed_dividends_YYYYMMDD.csv
 
-Install : pip install psxdata beautifulsoup4 pandas
-Run     : python psx_bronze.py                 (prices 30 days + dividends)
-          python psx_bronze.py --days 5        (prices last 5 days)
-          python psx_bronze.py --only prices   (or: dividends)
-          python psx_bronze.py --limit 10      (test on first 10 tickers)
+Install : pip install -r requirements.txt
+Run     : python scraper.py                      (prices 30 days + dividends)
+          python scraper.py --days 5             (prices last 5 days)
+          python scraper.py --only prices        (or: dividends)
+          python scraper.py --limit 10           (test on first 10 tickers)
+          python scraper.py --tickers HBL,OGDC   (only these tickers)
 """
 import argparse
 import re
@@ -55,9 +57,9 @@ def parse_details(text):
         out.append({"pct": float(pct), "tag": tag.strip(), "type": typ,
                     "right_price": None, "right_kind": None,
                     "parse_status": status})
-        if out:
-         seen, uniq = set(), []      # PSX sometimes repeats an item in one cell
-         for o in out:
+    if out:
+        seen, uniq = set(), []      # PSX sometimes repeats an item in one cell
+        for o in out:
             k = (o["pct"], o["tag"], o["type"])
             if k not in seen:
                 seen.add(k)
@@ -91,6 +93,8 @@ def parse_details(text):
              "right_price": float(price_m.group(1)) if price_m else None,
              "right_kind": right_kind,
              "parse_status": "fallback" if typ else "unparsed"}]
+
+
 DATE = re.compile(r"\d{2}/\d{2}/\d{4}")
 
 _scraper = None
