@@ -58,9 +58,7 @@ jobs:
 
       # Face values change rarely. Scrape them on the first Monday of each month,
       # or when the face_value box is set to true. Uses the dividend files written above.
-      # continue-on-error: a failure here must not block the daily upload.
       - name: Scrape face values (first Monday of the month, or on request)
-        continue-on-error: true
         env:
           PYTHONUNBUFFERED: "1"
           FORCE: ${{ github.event.inputs.face_value }}
@@ -79,18 +77,6 @@ jobs:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
         run: python upload_to_databricks.py
-
-      # Runs Bronze, Silver, Gold after the new files are in the Volume.
-      # 1102736101341209 = Job ID (not the Job run ID) of the Databricks job.
-      - name: Run Databricks job (Bronze, Silver, Gold)
-        env:
-          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
-        run: |
-          curl -sS --fail-with-body -X POST "$DATABRICKS_HOST/api/2.1/jobs/run-now" \
-            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"job_id": 1102736101341209}'
 
       - name: Upload Bronze files (backup artifact)
         if: always()
